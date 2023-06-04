@@ -1,0 +1,12 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: introduction
+parts:
+  - caption: "Part I: The Inferno"
+    chapters:
+      - file: part_I/chapter1
+      - file: part_I/chapter2
+      - file: part_I/chapter3
+      - file: part_I/chapter4
