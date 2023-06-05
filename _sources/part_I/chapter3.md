@@ -176,6 +176,60 @@ int main() {
 }
 ```
 
+# Avoiding sweet but unneccesary pain with CUDA best practices
+
+Isn't adding great? We've created something truly special, flawless. Truly cast-iron in its design. Or so we'd like to think. In the blissful ignorance of missing best practices, our program can become akin to a sinking ship, leaking memory from small unseen cracks while mismanaging thread blocks like a lost conductor in a grand symphony. But fear not, for I have compiled a list of best practices, which I have just googled (remember, I'm new to this too) to help you avoid the same mistakes I made. You may skip this section, as I probably would, but do so at your own peril. I salute you, you brave, idiotic soul.
+## Error Checking: It's Not Paranoia If They're Really Out to Get You
+
+First and foremost, CUDA doesn't like to tell you when things go wrong. It'll sit in silence, maybe smirk a bit, and watch you pull your hair out in confusion. That's why it's paramount to check for errors for CUDA API calls and kernel launches. I've done you a favor and included a handy macro and function to assist with this. It's a like a smoke detector. When it's silent, you can enjoy the soothing hum of your GPU. When it goes off, it's time to evacuate your code.
+
+```cpp
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+```
+
+So, what is a macro, you ask? In C and C++, a macro is a way of defining shorthand for other code. It's like when your girlfriend whispers in your ear to remind you of her parents names. You just have to say gpuErrchk and the compiler understands it as gpuAssert.
+
+The #define directive defines the gpuErrchk(ans) macro. When this macro is used, it's as if the code inside the curly brackets { gpuAssert((ans), __FILE__, __LINE__); } is copied and pasted in its place. This bit of magic invokes the gpuAssert function with three arguments: a CUDA operation that returns a cudaError_t, the current file name __FILE__, and the current line number __LINE__.
+
+The gpuAssert fucntion takes a cudaError_t code, file name, line number, and whether to abort if an error is found. If the cudaError_t code indicates an error, the function prints an error message with the name of the file and the line number where the error happened, adding a personal touch to your debugging experience. If the abort parameter is true, the program stops there. This is the equivalent of someone yelling "Stop the presses!" when a typo is found in an old-timey newspaper.
+
+So let's say you've called a CUDA function like so: `gpuErrchk(cudaMalloc((void **)&d_a, size));`. If cudaMalloc encounters an error and doesn't return cudaSuccess, gpuErrchk will call gpuAssert which will print out an error message telling you exactly where the error occurred. Without this careful error checking, CUDA might lead you on a wild goose chase around your code, cackling in the shadows as you wonder why your program is crashing or producing incorrect results. Error checking can save you from such torment. So, take a moment to appreciate these lines of code, for they will be your steadfast allies in the turbulent seas of CUDA programming.
+
+## Choosing Optimal Block and Grid Sizes: It's Not About Size, It's How You Use It
+
+In our example, we've been launching an excessive number of blocks, each with a single thread. You may find this satisfying in its simplicity, but unfortunately, it's akin to buying a sports car and never shifting out of first gear.
+
+You see, CUDA cores enjoy company. They perform their best when surrounded by threads, not blocks. Instead, aim for fewer blocks, but pack them full of threads. Like stuffing clowns into a car, the more threads you fit in a block, the more efficiently you're using your resources. Common choices range from 256 to 512 threads per block, though you'll have to gauge the clown-car capacity of your specific GPU.
+
+```cpp
+    const int THREADS_PER_BLOCK = 16;
+    const int BLOCKS = (N + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
+    ...
+    dim3 threadsPerBlock(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+    dim3 numBlocks(BLOCKS, BLOCKS);
+    addMatrices<<<numBlocks, threadsPerBlock>>>(d_a, d_b, d_c, N);
+```
+
+In this piece of code, that I, your humble guide, have painstakingly assembled, we've filled each block with threads until they're practically bulging at the seams. This is courtesy of the variable `THREADS_PER_BLOCK` set to 16 – a decision driven by the undeniable charm of powers of 2, and maybe a dash of mathematical superstition.
+
+These threads are then herded into blocks like overzealous party-goers crammed into a small room. When we set the kernel in motion with addMatrices<<<numBlocks, threadsPerBlock>>>(d_a, d_b, d_c, N);, we're essentially opening the door to the party and hoping nobody notices the fire code violation. Here, numBlocks and threadsPerBlock are dim3 variables, a dim3 type being the CUDA equivalent of an overzealous party planner, making sure even one-dimensional parties are technically ready to go 3D at a moment's notice. In our case, numBlocks takes care of the number of blocks per dimension, and threadsPerBlock is the bouncer, keeping a check on the number of threads in each block.
+## Memory Allocation and De-allocation: Give and Take, But Mostly Take
+
+When it comes to memory, CUDA is a bit of a hoarder. It wants its own separate memory, separate from what the CPU uses. This memory needs to be allocated and then freed once we're done with it. If malloc or cudaMalloc fails, it returns a null pointer. That's like the bank declining your credit card. It's embarrassing, it's problematic, and it's something you need to check for. Always verify your allocations, or you'll be dining on a fine plate of segmentation faults for dinner.
+
+## Const Correctness: Some Things Never Change
+
+As a final note, let's talk about 'const'. In our kernel, there's a parameter 'N' that doesn't get modified. It's like the grumpy old man of parameters, stuck in his ways. When you come across such parameters, declare them as 'const'. It helps the compiler, and it signals your intentions to anyone reading your code.
+
+
 And there you have it, dear reader. You've successfully navigated the Second Circle of our CUDA Inferno. You've learned how to write and call CUDA kernels, and you've even learned how to add vectors and matrices together. I hope you're feeling proud of yourself, because you should be. In the next chapter, we'll learn how to interface our CUDA programs with Python, and things will start to get a lot more interesting. So hang in there. The best is yet to come
 
 ! And remember, if you're feeling overwhelmed, just take a deep breath and remember that every expert was once a beginner. Even me. Especially me.
@@ -184,7 +238,7 @@ And if you're feeling like you're in over your head, just remember: it's not roc
 
 So, stick around, won't you? Let's continue this dance of ours. I promise, it'll be worth your while.
 
-## Full Code
+# Full Code
 
 ### Element addition
 

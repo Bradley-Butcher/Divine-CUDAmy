@@ -154,6 +154,8 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="chapter1.html"><em>The Dark Wood of Errors</em>: Installing CUDA</a></li>
 <li class="toctree-l1"><a class="reference internal" href="chapter2.html"><em>The First Circle</em>: Blocks and Threads</a></li>
 <li class="toctree-l1"><a class="reference internal" href="chapter3.html"><em>The Second Circle</em>: Adding (to the Pain)</a></li>
+
+
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">The Third Circle: Speaking with the Python</a></li>
 </ul>
 
@@ -382,7 +384,7 @@ document.write(`
 <section id="setting-up-cython">
 <h2>Setting Up Cython<a class="headerlink" href="#setting-up-cython" title="Permalink to this heading">#</a></h2>
 <p>First things first, we need to install Cython. Stay calm and command your terminal:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install cython
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>cython
 </pre></div>
 </div>
 <p>Well done, survivor. You’ve achieved another monumental task in this journey through the inferno.</p>
@@ -392,37 +394,37 @@ document.write(`
 <p>The first step in calling CUDA from Python is creating a Cython wrapper for your CUDA code. I know this sounds confusing, but it’s really not.</p>
 <p>You see, Cython works by translating Python code into C code and then compiling this C code into a Python extension module, a shared library that Python can import just like a normal Python module.</p>
 <p>First, let’s create a file named ‘<a class="reference external" href="http://add.cu/">add.cu</a>’ and write our CUDA kernel function for adding two integers. Remember that from Chapter 3? This time, we’ll also include a wrapper function to call our kernel. The ‘extern “C”’ bit tells the compiler that the code inside the braces should be compiled as C code.</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cuda.h&gt;</span><span class="cp"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cuda.h&gt;</span>
 
 <span class="c1">// The CUDA kernel</span>
-<span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">add_kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="o">*</span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">add_kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="o">*</span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+<span class="p">}</span>
 
 <span class="c1">// The C++ wrapper function</span>
-<span class="k">extern</span><span class="w"> </span><span class="s">&quot;C&quot;</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">add</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">dev_c</span><span class="p">;</span><span class="w"></span>
+<span class="k">extern</span><span class="w"> </span><span class="s">&quot;C&quot;</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">add</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">dev_c</span><span class="p">;</span>
 
 <span class="w">    </span><span class="c1">// Allocate memory on the GPU</span>
-<span class="w">    </span><span class="n">cudaMalloc</span><span class="p">((</span><span class="kt">void</span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">dev_c</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="n">cudaMalloc</span><span class="p">((</span><span class="kt">void</span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">dev_c</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
 
 <span class="w">    </span><span class="c1">// Run the kernel</span>
-<span class="w">    </span><span class="n">add_kernel</span><span class="o">&lt;&lt;&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">&gt;&gt;&gt;</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">dev_c</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">add_kernel</span><span class="o">&lt;&lt;&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">&gt;&gt;&gt;</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">dev_c</span><span class="p">);</span>
 
 <span class="w">    </span><span class="c1">// Copy the result back to the host</span>
-<span class="w">    </span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">dev_c</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">),</span><span class="w"> </span><span class="n">cudaMemcpyDeviceToHost</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">dev_c</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">),</span><span class="w"> </span><span class="n">cudaMemcpyDeviceToHost</span><span class="p">);</span>
 
 <span class="w">    </span><span class="c1">// Free the memory on the GPU</span>
-<span class="w">    </span><span class="n">cudaFree</span><span class="p">(</span><span class="n">dev_c</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="n">cudaFree</span><span class="p">(</span><span class="n">dev_c</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>The next step is to compile this CUDA code into a shared library that Python can link against. The compilation process involves both the CUDA compiler (nvcc) and the system’s C++ compiler (g++). Here’s a simple Makefile that will get this job done:</p>
 <div class="highlight-makefile notranslate"><div class="highlight"><pre><span></span><span class="nf">all</span><span class="o">:</span>
-    nvcc -c -o add.o add.cu
-    g++ -shared -o libadd.so add.o
+<span class="w">    </span>nvcc<span class="w"> </span>-c<span class="w"> </span>-o<span class="w"> </span>add.o<span class="w"> </span>add.cu
+<span class="w">    </span>g++<span class="w"> </span>-shared<span class="w"> </span>-o<span class="w"> </span>libadd.so<span class="w"> </span>add.o
 </pre></div>
 </div>
 <p>After running ‘make’, we’ll get a shared library file named ‘<a class="reference external" href="http://libadd.so/">libadd.so</a>’. This library contains our CUDA function that we’re going to call from Python.</p>

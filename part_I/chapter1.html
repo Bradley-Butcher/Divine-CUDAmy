@@ -155,6 +155,8 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1 current active"><a class="current reference internal" href="#"><em>The Dark Wood of Errors</em>: Installing CUDA</a></li>
 <li class="toctree-l1"><a class="reference internal" href="chapter2.html"><em>The First Circle</em>: Blocks and Threads</a></li>
 <li class="toctree-l1"><a class="reference internal" href="chapter3.html"><em>The Second Circle</em>: Adding (to the Pain)</a></li>
+
+
 <li class="toctree-l1"><a class="reference internal" href="chapter4.html">The Third Circle: Speaking with the Python</a></li>
 </ul>
 
@@ -371,7 +373,7 @@ document.write(`
 <h2>Installing CUDA<a class="headerlink" href="#installing-cuda" title="Permalink to this heading">#</a></h2>
 <p>First things first, we have to tame the beast that is CUDA. For those of you sporting a Windows crest, take yourself to the green-themed NVIDIA website, locate the CUDA Toolkit, and download the latest version. Execute the downloaded file and watch as CUDA bends to your will (or crashes spectacularly, whichever comes first).</p>
 <p>Now, my dear Linux acolytes, your path is slightly less traveled. You’re required to recite these sacred lines to your command-line deity:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt-get install nvidia-cuda-toolkit
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>nvidia-cuda-toolkit
 </pre></div>
 </div>
 <p>And to those proudly brandishing the Apple sigil… Well, there’s no easy way to say this but NVIDIA stopped supporting CUDA for MacOS after version 10.2. You might want to reconsider your allegiance.</p>
@@ -393,32 +395,32 @@ add_executable(cu_hello_world src/cuda/hello.cu)
 <h2>Setting Up Your Project<a class="headerlink" href="#setting-up-your-project" title="Permalink to this heading">#</a></h2>
 <p>Lastly, we need to form some sort of project structure. I’m used to automated Python tooling doing this all for me. Alas, I know so little about C++ that I don’t know what tools exist. Anyway, here’s a suggestion:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/my_cuda_project
-    /src
-        /cuda
-            hello.cu
+<span class="w">    </span>/src
+<span class="w">        </span>/cuda
+<span class="w">            </span>hello.cu
 </pre></div>
 </div>
 <p>And for the content of <code class="docutils literal notranslate"><span class="pre">hello.cu</span></code>, let’s keep things simple:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
 
-<span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">helloFromGPU</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Hello World from GPU!</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">);</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">helloFromGPU</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Hello World from GPU!</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">);</span>
+<span class="p">}</span>
 
-<span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Hello World from CPU!</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Hello World from CPU!</span><span class="se">\\</span><span class="s">n&quot;</span><span class="p">);</span>
 
-<span class="w">    </span><span class="n">helloFromGPU</span><span class="o">&lt;&lt;&lt;</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="o">&gt;&gt;&gt;</span><span class="p">();</span><span class="w"></span>
-<span class="w">    </span><span class="n">cudaDeviceReset</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="n">helloFromGPU</span><span class="o">&lt;&lt;&lt;</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="o">&gt;&gt;&gt;</span><span class="p">();</span>
+<span class="w">    </span><span class="n">cudaDeviceReset</span><span class="p">();</span>
 
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>To get this all running either type the following lines in one-by-one, or be smart and add them to a bash script called <code class="docutils literal notranslate"><span class="pre">build.sh</span></code> or something similar:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir build
-<span class="nb">cd</span> build
-cmake ..
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>build
+<span class="nb">cd</span><span class="w"> </span>build
+cmake<span class="w"> </span>..
 make
 ./cu_hello_world
 </pre></div>
