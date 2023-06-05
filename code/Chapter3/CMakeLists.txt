@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+project(cu_hello_world LANGUAGES CXX CUDA)
+add_executable(add_element src/element.cu)
+add_executable(add_vector src/vector_bp.cu)
+add_executable(add_matrix src/matrix_bp.cu)

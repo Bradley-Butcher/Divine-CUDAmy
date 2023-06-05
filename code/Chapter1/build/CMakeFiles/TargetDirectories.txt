@@ -1,3 +1,0 @@
-/home/dev/Code/CUDAmy/Chapter1/build/CMakeFiles/rebuild_cache.dir
-/home/dev/Code/CUDAmy/Chapter1/build/CMakeFiles/edit_cache.dir
-/home/dev/Code/CUDAmy/Chapter1/build/CMakeFiles/cu_hello_world.dir

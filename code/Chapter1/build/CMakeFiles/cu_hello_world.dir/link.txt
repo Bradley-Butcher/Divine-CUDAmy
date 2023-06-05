@@ -1,1 +1,0 @@
-/usr/bin/g++  CMakeFiles/cu_hello_world.dir/src/cuda/hello.cu.o -o cu_hello_world  -L"/usr/local/cuda/targets/x86_64-linux/lib/stubs" -L"/usr/local/cuda/targets/x86_64-linux/lib" -lcudadevrt -lcudart_static -lrt -lpthread -ldl

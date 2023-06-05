@@ -3,4 +3,6 @@ mkdir build
 cd build
 cmake ..
 make
-./cu_hello_world
+./add_element
+./add_vector
+./add_matrix
