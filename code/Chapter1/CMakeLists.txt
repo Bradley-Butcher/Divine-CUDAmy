@@ -1,3 +1,3 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
-project(cu_hello_world LANGUAGES CXX CUDA)
+project(chapter1 LANGUAGES CXX CUDA)
 add_executable(cu_hello_world src/hello.cu)
