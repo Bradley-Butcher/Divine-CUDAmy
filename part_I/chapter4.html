@@ -155,7 +155,6 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="chapter2.html"><em>The First Circle</em>: Blocks and Threads</a></li>
 <li class="toctree-l1"><a class="reference internal" href="chapter3.html"><em>The Second Circle</em>: Adding (to the Pain)</a></li>
 
-
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">The Third Circle: Speaking with the Python</a></li>
 </ul>
 
@@ -350,11 +349,10 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-are-we-doing-this-again">Why Are We Doing This Again?</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cython-your-translator-in-this-hellish-journey">Cython: Your Translator in This Hellish Journey</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-up-cython">Setting Up Cython</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-the-bridge-building-a-cython-wrapper">Creating The Bridge: Building a Cython Wrapper</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interfacing-with-python">Interfacing With Python</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-making-our-cuda-code-play-nice">Step 1: Making our CUDA code play nice</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-head-over-heels-for-headers">Step 2: Head over heels for headers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-wrapping-it-up-with-cython">Step 3: Wrapping it up with Cython</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-building-with-distutils">Step 4: Building with Distutils</a></li>
 </ul>
             </nav>
         </div>
@@ -368,97 +366,149 @@ document.write(`
                   
   <section class="tex2jax_ignore mathjax_ignore" id="the-third-circle-speaking-with-the-python">
 <h1>The Third Circle: Speaking with the Python<a class="headerlink" href="#the-third-circle-speaking-with-the-python" title="Permalink to this heading">#</a></h1>
-<p><em>In the Third Circle, we see the allure of Python and the unyielding fortitude of CUDA form a tumultuous bond. A bit like those celebrity relationships in the tabloids—eccentric and always on the edge of implosion. Yet, we dare to tread this path.</em></p>
-<p>Before we delve into the deep, dark abyss of mixing Python and CUDA, let’s comprehend why we’re subjecting ourselves to this ordeal in the first place.</p>
-<section id="why-are-we-doing-this-again">
-<h2>Why Are We Doing This Again?<a class="headerlink" href="#why-are-we-doing-this-again" title="Permalink to this heading">#</a></h2>
-<p>We’re looking to have our Python and CUDA cake and eat it too. Python, being an interpreted language, comes with the gift of simplicity but pays the price in speed. CUDA, on the other hand, allows us to perform complex calculations rapidly by using the power of the GPU. The idea is to exploit the easy-to-use nature of Python for tasks such as data preprocessing, then pass the data to CUDA for the heavy lifting. A harmonious duet of simplicity and power.</p>
-<p>But how do we create this harmony? Enter Cython.</p>
-</section>
-<section id="cython-your-translator-in-this-hellish-journey">
-<h2>Cython: Your Translator in This Hellish Journey<a class="headerlink" href="#cython-your-translator-in-this-hellish-journey" title="Permalink to this heading">#</a></h2>
-<p>Cython is our bridge, an interpreter between Python and CUDA. It’s a programming language that is a superset of Python, which makes it possible for Python to play well with C/C++. Since CUDA C is essentially C/C++ with a few extra bits, Cython can help us interface with CUDA code as well.</p>
-<p>To put it in layman’s terms, Cython is like a skilled diplomat, proficient in the languages of both Python and CUDA, and capable of facilitating productive dialogue between the two.</p>
-<p>Now, let’s roll up our sleeves and get dirty.</p>
-</section>
-<section id="setting-up-cython">
-<h2>Setting Up Cython<a class="headerlink" href="#setting-up-cython" title="Permalink to this heading">#</a></h2>
-<p>First things first, we need to install Cython. Stay calm and command your terminal:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>cython
-</pre></div>
-</div>
-<p>Well done, survivor. You’ve achieved another monumental task in this journey through the inferno.</p>
-</section>
-<section id="creating-the-bridge-building-a-cython-wrapper">
-<h2>Creating The Bridge: Building a Cython Wrapper<a class="headerlink" href="#creating-the-bridge-building-a-cython-wrapper" title="Permalink to this heading">#</a></h2>
-<p>The first step in calling CUDA from Python is creating a Cython wrapper for your CUDA code. I know this sounds confusing, but it’s really not.</p>
-<p>You see, Cython works by translating Python code into C code and then compiling this C code into a Python extension module, a shared library that Python can import just like a normal Python module.</p>
-<p>First, let’s create a file named ‘<a class="reference external" href="http://add.cu/">add.cu</a>’ and write our CUDA kernel function for adding two integers. Remember that from Chapter 3? This time, we’ll also include a wrapper function to call our kernel. The ‘extern “C”’ bit tells the compiler that the code inside the braces should be compiled as C code.</p>
+<p>Ah, dear reader, welcome to the Third Circle of our shared Inferno, where we begin the journey of touching our CUDA to the Python.</p>
+<section id="step-1-making-our-cuda-code-play-nice">
+<h2>Step 1: Making our CUDA code play nice<a class="headerlink" href="#step-1-making-our-cuda-code-play-nice" title="Permalink to this heading">#</a></h2>
+<p>First things first, we must modify our matrix addition code from the previous chapter.</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cuda.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cuda_runtime.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
 
-<span class="c1">// The CUDA kernel</span>
-<span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">add_kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span>
+<span class="k">extern</span><span class="w"> </span><span class="s">&quot;C&quot;</span>
 <span class="p">{</span>
-<span class="w">    </span><span class="o">*</span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;add_matrices.h&quot;</span>
 <span class="p">}</span>
 
-<span class="c1">// The C++ wrapper function</span>
-<span class="k">extern</span><span class="w"> </span><span class="s">&quot;C&quot;</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">add</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span>
-<span class="p">{</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">dev_c</span><span class="p">;</span>
+<span class="c1">// Kernel definition</span>
+<span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">addMatrices</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">N</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">row</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">blockIdx</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">blockDim</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">threadIdx</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">blockDim</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">row</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">c</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="n">N</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">col</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="n">N</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">col</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="n">N</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">col</span><span class="p">];</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 
-<span class="w">    </span><span class="c1">// Allocate memory on the GPU</span>
-<span class="w">    </span><span class="n">cudaMalloc</span><span class="p">((</span><span class="kt">void</span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">dev_c</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">gpu_add_matrices</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">N</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">THREADS_PER_BLOCK</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">16</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">BLOCKS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">THREADS_PER_BLOCK</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">THREADS_PER_BLOCK</span><span class="p">;</span>
 
-<span class="w">    </span><span class="c1">// Run the kernel</span>
-<span class="w">    </span><span class="n">add_kernel</span><span class="o">&lt;&lt;&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">&gt;&gt;&gt;</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">dev_c</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">d_a</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">d_b</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">d_c</span><span class="p">;</span><span class="w"> </span><span class="c1">// device copies of a, b, c</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
 
-<span class="w">    </span><span class="c1">// Copy the result back to the host</span>
-<span class="w">    </span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">dev_c</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">),</span><span class="w"> </span><span class="n">cudaMemcpyDeviceToHost</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// Allocate space for device copies of a, b, c</span>
+<span class="w">    </span><span class="n">cudaMalloc</span><span class="p">((</span><span class="kt">void</span><span class="w"> </span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">d_a</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
+<span class="w">    </span><span class="n">cudaMalloc</span><span class="p">((</span><span class="kt">void</span><span class="w"> </span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">d_b</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
+<span class="w">    </span><span class="n">cudaMalloc</span><span class="p">((</span><span class="kt">void</span><span class="w"> </span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">d_c</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
 
-<span class="w">    </span><span class="c1">// Free the memory on the GPU</span>
-<span class="w">    </span><span class="n">cudaFree</span><span class="p">(</span><span class="n">dev_c</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// Copy inputs to device</span>
+<span class="w">    </span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">d_a</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">cudaMemcpyHostToDevice</span><span class="p">);</span>
+<span class="w">    </span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">d_b</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">cudaMemcpyHostToDevice</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Call the kernel</span>
+<span class="w">    </span><span class="n">dim3</span><span class="w"> </span><span class="nf">threadsPerBlock</span><span class="p">(</span><span class="n">THREADS_PER_BLOCK</span><span class="p">,</span><span class="w"> </span><span class="n">THREADS_PER_BLOCK</span><span class="p">);</span>
+<span class="w">    </span><span class="n">dim3</span><span class="w"> </span><span class="nf">numBlocks</span><span class="p">(</span><span class="n">BLOCKS</span><span class="p">,</span><span class="w"> </span><span class="n">BLOCKS</span><span class="p">);</span>
+<span class="w">    </span><span class="n">addMatrices</span><span class="o">&lt;&lt;&lt;</span><span class="n">numBlocks</span><span class="p">,</span><span class="w"> </span><span class="n">threadsPerBlock</span><span class="o">&gt;&gt;&gt;</span><span class="p">(</span><span class="n">d_a</span><span class="p">,</span><span class="w"> </span><span class="n">d_b</span><span class="p">,</span><span class="w"> </span><span class="n">d_c</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Copy result back to host</span>
+<span class="w">    </span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">d_c</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">cudaMemcpyDeviceToHost</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Cleanup</span>
+<span class="w">    </span><span class="n">cudaFree</span><span class="p">(</span><span class="n">d_a</span><span class="p">);</span><span class="w"> </span><span class="n">cudaFree</span><span class="p">(</span><span class="n">d_b</span><span class="p">);</span><span class="w"> </span><span class="n">cudaFree</span><span class="p">(</span><span class="n">d_c</span><span class="p">);</span>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>The next step is to compile this CUDA code into a shared library that Python can link against. The compilation process involves both the CUDA compiler (nvcc) and the system’s C++ compiler (g++). Here’s a simple Makefile that will get this job done:</p>
-<div class="highlight-makefile notranslate"><div class="highlight"><pre><span></span><span class="nf">all</span><span class="o">:</span>
-<span class="w">    </span>nvcc<span class="w"> </span>-c<span class="w"> </span>-o<span class="w"> </span>add.o<span class="w"> </span>add.cu
-<span class="w">    </span>g++<span class="w"> </span>-shared<span class="w"> </span>-o<span class="w"> </span>libadd.so<span class="w"> </span>add.o
-</pre></div>
-</div>
-<p>After running ‘make’, we’ll get a shared library file named ‘<a class="reference external" href="http://libadd.so/">libadd.so</a>’. This library contains our CUDA function that we’re going to call from Python.</p>
+<p>The keen eyed among you, of which I’m sure there must be at least one, will notice we’ve changed the name of the <code class="docutils literal notranslate"><span class="pre">main</span></code> function to <code class="docutils literal notranslate"><span class="pre">gpu_add_matrices</span></code>. This is because we’re going to be calling this function from Python, and we don’t want to have to deal with the <code class="docutils literal notranslate"><span class="pre">main</span></code> function.
+In addition, it now takes in parameters, how nice. Note I’ve also immediately thrown away most of our best practices from the previous chapter. I’m trying to keep it short, who needs error checking anyway?</p>
+<p>We’ll also need to import <code class="docutils literal notranslate"><span class="pre">&lt;cuda.h&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;cuda_runtime.h&gt;</span></code> to make sure we have access to CUDA’s functions and types when using Cython. In previous chapters these were automatically added by the NVCC compiler, but now we’re using Cython, we need to do it ourselves. Boo.</p>
+<p>Lastly, we’ll need to add the <code class="docutils literal notranslate"><span class="pre">extern</span> <span class="pre">&quot;C&quot;</span></code> block. This tells the compiler to treat the code like C code to avoid name mangling, allowing Cython to correctly call our CUDA function. It’s totally a thing, Google it.</p>
 </section>
-<section id="interfacing-with-python">
-<h2>Interfacing With Python<a class="headerlink" href="#interfacing-with-python" title="Permalink to this heading">#</a></h2>
-<p>Now it’s time to use Cython to create a Python module for our CUDA function. First, create a file called ‘add.pyx’ with the following contents:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cdef</span> <span class="n">extern</span> <span class="kn">from</span> <span class="s2">&quot;add.cu&quot;</span><span class="p">:</span>
-    <span class="n">void</span> <span class="n">add</span><span class="p">(</span><span class="nb">int</span> <span class="n">a</span><span class="p">,</span> <span class="nb">int</span> <span class="n">b</span><span class="p">,</span> <span class="nb">int</span> <span class="o">*</span><span class="n">c</span><span class="p">)</span>
+<section id="step-2-head-over-heels-for-headers">
+<h2>Step 2: Head over heels for headers<a class="headerlink" href="#step-2-head-over-heels-for-headers" title="Permalink to this heading">#</a></h2>
+<p>Next on the devils list is to create a header file for our new function. This allows Cython (discussed imminently) to know what functions exist, and how to call them.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#ifndef ADD_MATRICES_H</span>
+<span class="cp">#define ADD_MATRICES_H</span>
 
-<span class="k">def</span> <span class="nf">add_integers</span><span class="p">(</span><span class="nb">int</span> <span class="n">a</span><span class="p">,</span> <span class="nb">int</span> <span class="n">b</span><span class="p">):</span>
-    <span class="n">cdef</span> <span class="nb">int</span> <span class="n">c</span>
-    <span class="n">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">c</span><span class="p">)</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">gpu_add_matrices</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+<p>In the nightclub of our code, the <code class="docutils literal notranslate"><span class="pre">#ifndef</span></code> serves as the bouncer. It checks if the guest <code class="docutils literal notranslate"><span class="pre">ADD_MATRICES_H</span></code> is already at the party. If it is, the bouncer firmly says, “You’re not coming in twice, mate!”
+If <code class="docutils literal notranslate"><span class="pre">ADD_MATRICES_H</span></code> isn’t at the party yet, <code class="docutils literal notranslate"><span class="pre">#define</span></code> puts its name on the guest list. This way, if it tries to sneak in again, the bouncer will be ready.</p>
+<p>The line <code class="docutils literal notranslate"><span class="pre">void</span> <span class="pre">gpu_add_matrices(int</span> <span class="pre">*a,</span> <span class="pre">int</span> <span class="pre">*b,</span> <span class="pre">int</span> <span class="pre">*c,</span> <span class="pre">const</span> <span class="pre">int</span> <span class="pre">N);</span></code> is like the DJ announcing the next track: “Next up, we’ve got <code class="docutils literal notranslate"><span class="pre">gpu_add_matrices</span></code>, spinning some beats with <code class="docutils literal notranslate"><span class="pre">a</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code>, <code class="docutils literal notranslate"><span class="pre">c</span></code>, and <code class="docutils literal notranslate"><span class="pre">N</span></code>!”. It’s declaring our CUDA function and what it expects to do its magic.</p>
+<p>And finally, <code class="docutils literal notranslate"><span class="pre">#endif</span></code> is our bouncer giving a sigh of relief and shutting the door, signaling the end of the include guard shift.</p>
+</section>
+<section id="step-3-wrapping-it-up-with-cython">
+<h2>Step 3: Wrapping it up with Cython<a class="headerlink" href="#step-3-wrapping-it-up-with-cython" title="Permalink to this heading">#</a></h2>
+<p>Now, we will bridge the chasm between CUDA and Python, the high-level convenience and the low-level power. It’s akin to merging water and oil, but fortunately for us, Cython exists to make this seemingly impossible task possible.
+We’ll need to create a Cython file, for example: <code class="docutils literal notranslate"><span class="pre">matrix_adder_wrapper.pyx</span></code>.</p>
+<p>Let’s start by adding these enigmatic directives:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># distutils: language = c++</span>
+<span class="c1"># distutils: sources = add_matrices.cu</span>
+</pre></div>
+</div>
+<p>These lines are specifically for distutils, a module in Python responsible for building and installing additional modules. We inform it that the language we’re going to deal with is C++ (although it’s really CUDA, but for the build process, it’s nearly the same). The second line specifies the source file that will be compiled, our CUDA program, <code class="docutils literal notranslate"><span class="pre">add_matrices.cu</span></code>. This information is vital for distutils to correctly build our extension.</p>
+<p>Then, we have this exotic block:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cdef</span> <span class="n">extern</span> <span class="kn">from</span> <span class="s2">&quot;add_matrices.h&quot;</span><span class="p">:</span>
+    <span class="n">void</span> <span class="n">gpu_add_matrices</span><span class="p">(</span><span class="nb">int</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="nb">int</span> <span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="nb">int</span> <span class="o">*</span><span class="n">c</span><span class="p">,</span> <span class="n">const</span> <span class="nb">int</span> <span class="n">N</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">cdef</span> <span class="pre">extern</span></code> here is Cython’s way of declaring that there’s a C function we’d like to use. By doing so, Cython can generate the correct C code that calls our CUDA function from Python. This block is our diplomatic envoy, effectively stating, “We’ve got an outside function named <code class="docutils literal notranslate"><span class="pre">gpu_add_matrices</span></code>. It looks like this, and it’s from <code class="docutils literal notranslate"><span class="pre">add_matrices.h</span></code>.”</p>
+<p>Now, onto the pièce de résistance: the Python wrapper function:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">add_matrices</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">cdef</span> <span class="nb">int</span> <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">cdef</span> <span class="nb">int</span> <span class="n">c</span><span class="p">[</span><span class="n">N</span><span class="o">*</span><span class="n">N</span><span class="p">]</span>
+    <span class="n">gpu_add_matrices</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">&amp;</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">&amp;</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">N</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">c</span>
 </pre></div>
 </div>
-<p>This Cython file does two things:</p>
-<ol class="arabic simple">
-<li><p>It declares that there’s a function named ‘add’ (from our CUDA code) that we want to call.</p></li>
-<li><p>It defines a Python function named ‘add_integers’ that Python code can call. This function just wraps the CUDA ‘add’ function, passing its arguments along and returning its result.</p></li>
-</ol>
-<p>Finally, we need to compile this Cython code into a Python extension module. We’ll use a setup script named ‘<a class="reference external" href="http://setup.py/">setup.py</a>’:</p>
+<p>This Python function uses Cython’s ability to declare C-style variables with <code class="docutils literal notranslate"><span class="pre">cdef</span></code>, and it calls our CUDA function using pointers (i.e., <code class="docutils literal notranslate"><span class="pre">&amp;a[0]</span></code>) to the data stored in Python lists. The result of the CUDA function is then returned back to Python land.</p>
+<p>This leaves us with the full code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># distutils: language = c++</span>
+<span class="c1"># distutils: sources = add_matrices.cu</span>
+
+<span class="n">cdef</span> <span class="n">extern</span> <span class="kn">from</span> <span class="s2">&quot;add_matrices.h&quot;</span><span class="p">:</span>
+    <span class="n">void</span> <span class="n">gpu_add_matrices</span><span class="p">(</span><span class="nb">int</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="nb">int</span> <span class="o">*</span><span class="n">b</span><span class="p">,</span> <span class="nb">int</span> <span class="o">*</span><span class="n">c</span><span class="p">,</span> <span class="n">const</span> <span class="nb">int</span> <span class="n">N</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">add_matrices</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">cdef</span> <span class="nb">int</span> <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">cdef</span> <span class="nb">int</span> <span class="n">c</span><span class="p">[</span><span class="n">N</span><span class="o">*</span><span class="n">N</span><span class="p">]</span>
+    <span class="n">gpu_add_matrices</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">&amp;</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">&amp;</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">N</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">c</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-building-with-distutils">
+<h2>Step 4: Building with Distutils<a class="headerlink" href="#step-4-building-with-distutils" title="Permalink to this heading">#</a></h2>
+<p>Oh, my favorite part of coding: the build process. It’s like waiting for paint to dry, but the paint is code. Let’s turn to our trusty sidekick, distutils, to help us out.</p>
+<p>First, we need to write a <code class="docutils literal notranslate"><span class="pre">setup.py</span></code> file, which is about as fun as it sounds:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">setuptools</span> <span class="kn">import</span> <span class="n">setup</span>
+<span class="kn">from</span> <span class="nn">setuptools.extension</span> <span class="kn">import</span> <span class="n">Extension</span>
 <span class="kn">from</span> <span class="nn">Cython.Build</span> <span class="kn">import</span> <span class="n">cythonize</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="n">ext_modules</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Extension</span><span class="p">(</span>
+        <span class="s2">&quot;add_matrices&quot;</span><span class="p">,</span>
+        <span class="n">sources</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;add_matrices.pyx&quot;</span><span class="p">,</span> <span class="s2">&quot;add_matrices.cu&quot;</span><span class="p">],</span>
+        <span class="n">include_dirs</span><span class="o">=</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">get_include</span><span class="p">()],</span>
+        <span class="n">language</span><span class="o">=</span><span class="s1">&#39;c++&#39;</span><span class="p">,</span>
+        <span class="n">extra_compile_args</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;-O2&#39;</span><span class="p">,</span> <span class="s1">&#39;--ptxas-options=-v&#39;</span><span class="p">,</span> <span class="s1">&#39;-arch=sm_60&#39;</span><span class="p">,</span> <span class="s1">&#39;--compiler-options&#39;</span><span class="p">,</span> <span class="s2">&quot;&#39;-fPIC&#39;&quot;</span><span class="p">],</span>
+        <span class="n">extra_link_args</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;-lcudart&#39;</span><span class="p">],</span>
+        <span class="n">library_dirs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;/usr/local/cuda/lib64&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+<span class="p">]</span>
 
 <span class="n">setup</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;CUDA addition&#39;</span><span class="p">,</span>
-    <span class="n">ext_modules</span><span class="o">=</span><span class="n">cythonize</span><span class="p">(</span><span class="s2">&quot;add.pyx&quot;</span><span class="p">),</span>
-    <span class="n">zip_safe</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Add Matrices&#39;</span><span class="p">,</span>
+    <span class="n">ext_modules</span><span class="o">=</span><span class="n">cythonize</span><span class="p">(</span><span class="n">ext_modules</span><span class="p">),</span>
 <span class="p">)</span>
 </pre></div>
 </div>
-<p>You can then build your Cython module using the command ‘python <a class="reference external" href="http://setup.py/">setup.py</a> build_ext –inplace’. This command will create a file named ‘add.cpython-XXm-x86_64-linux-gnu.so’, which is a Python extension module that you can import in Python using the name ‘add’.</p>
-<p>If you’ve made it this far without pulling out your hair, well done! You’ve traversed the Third Circle, linking Python and CUDA using Cython. I’m afraid to say, dear reader, that the journey is only going to get tougher from here on out. But worry not! After all, aren’t we here to endure a little punishment?</p>
+<p>This code tells distutils what it should be doing, in a way that is clear to even the most stubborn of machines. There are various compile and link arguments that are specific to your system, so you may need to change them to match your setup.</p>
+<p>Our <code class="docutils literal notranslate"><span class="pre">ext_modules</span></code> list contains a single <code class="docutils literal notranslate"><span class="pre">Extension</span></code> object, which is essentially a glorified sticky note saying: “Compile these files with these settings, and please don’t mess it up”. Then <code class="docutils literal notranslate"><span class="pre">cythonize(ext_modules)</span></code> takes this sticky note and translates it into a format that distutils can understand, sort of like a parent interpreting their toddler’s scribbles.  Finally, <code class="docutils literal notranslate"><span class="pre">setup</span></code> ties this all together and kicks off the build process.</p>
+<p>With any luck, we’ll be able to run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">build_ext</span> <span class="pre">--inplace</span></code>, and be able to import our new module into Python with <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">add_matrices</span></code>. If not, well, I’m sure you’ll figure it out.
+The full code is available in the <code class="docutils literal notranslate"><span class="pre">code</span></code> folder once more.</p>
 </section>
 </section>
 
@@ -520,11 +570,10 @@ document.write(`
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-are-we-doing-this-again">Why Are We Doing This Again?</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cython-your-translator-in-this-hellish-journey">Cython: Your Translator in This Hellish Journey</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-up-cython">Setting Up Cython</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-the-bridge-building-a-cython-wrapper">Creating The Bridge: Building a Cython Wrapper</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interfacing-with-python">Interfacing With Python</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-making-our-cuda-code-play-nice">Step 1: Making our CUDA code play nice</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-head-over-heels-for-headers">Step 2: Head over heels for headers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-wrapping-it-up-with-cython">Step 3: Wrapping it up with Cython</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-building-with-distutils">Step 4: Building with Distutils</a></li>
 </ul>
   </nav></div>
 

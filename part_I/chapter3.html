@@ -156,7 +156,6 @@ const thebe_selector_output = ".output, .cell_output"
 <li class="toctree-l1"><a class="reference internal" href="chapter2.html"><em>The First Circle</em>: Blocks and Threads</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#"><em>The Second Circle</em>: Adding (to the Pain)</a></li>
 
-
 <li class="toctree-l1"><a class="reference internal" href="chapter4.html">The Third Circle: Speaking with the Python</a></li>
 </ul>
 
@@ -365,12 +364,6 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#choosing-optimal-block-and-grid-sizes-it-s-not-about-size-it-s-how-you-use-it">Choosing Optimal Block and Grid Sizes: It’s Not About Size, It’s How You Use It</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#memory-allocation-and-de-allocation-give-and-take-but-mostly-take">Memory Allocation and De-allocation: Give and Take, But Mostly Take</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#const-correctness-some-things-never-change">Const Correctness: Some Things Never Change</a></li>
-</ul>
-</li>
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#full-code">Full Code</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#element-addition">Element addition</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#vector-addition">Vector Addition</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#matrix-addition">Matrix Addition</a></li>
 </ul>
 </li>
 </ul>
@@ -587,155 +580,9 @@ document.write(`
 <section id="const-correctness-some-things-never-change">
 <h2>Const Correctness: Some Things Never Change<a class="headerlink" href="#const-correctness-some-things-never-change" title="Permalink to this heading">#</a></h2>
 <p>As a final note, let’s talk about ‘const’. In our kernel, there’s a parameter ‘N’ that doesn’t get modified. It’s like the grumpy old man of parameters, stuck in his ways. When you come across such parameters, declare them as ‘const’. It helps the compiler, and it signals your intentions to anyone reading your code.</p>
-<p>And there you have it, dear reader. You’ve successfully navigated the Second Circle of our CUDA Inferno. You’ve learned how to write and call CUDA kernels, and you’ve even learned how to add vectors and matrices together. I hope you’re feeling proud of yourself, because you should be. In the next chapter, we’ll learn how to interface our CUDA programs with Python, and things will start to get a lot more interesting. So hang in there. The best is yet to come</p>
-<p>! And remember, if you’re feeling overwhelmed, just take a deep breath and remember that every expert was once a beginner. Even me. Especially me.</p>
-<p>And if you’re feeling like you’re in over your head, just remember: it’s not rocket science. Well, unless you’re using CUDA for rocket science. In which case, it is. But don’t worry, you’re smart. You wouldn’t be here if you weren’t. Or maybe you’re just masochistic. Either way, I like your style.</p>
-<p>So, stick around, won’t you? Let’s continue this dance of ours. I promise, it’ll be worth your while.</p>
-</section>
-</section>
-<section class="tex2jax_ignore mathjax_ignore" id="full-code">
-<h1>Full Code<a class="headerlink" href="#full-code" title="Permalink to this heading">#</a></h1>
-<section id="element-addition">
-<h2>Element addition<a class="headerlink" href="#element-addition" title="Permalink to this heading">#</a></h2>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
-
-<span class="c1">// Kernel definition</span>
-<span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">add</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="o">*</span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">c</span><span class="p">;</span><span class="w"> </span><span class="c1">// host copy of c</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">d_c</span><span class="p">;</span><span class="w"> </span><span class="c1">// device copy of c</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Allocate space for device copy of c</span>
-<span class="w">    </span><span class="n">cudaMalloc</span><span class="p">((</span><span class="kt">void</span><span class="w"> </span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">d_c</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Call the kernel</span>
-<span class="w">    </span><span class="n">add</span><span class="o">&lt;&lt;&lt;</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="o">&gt;&gt;&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="n">d_c</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Copy result back to host</span>
-<span class="w">    </span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">d_c</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">cudaMemcpyDeviceToHost</span><span class="p">);</span>
-
-<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;2 + 7 = &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-
-<span class="w">    </span><span class="c1">// Cleanup</span>
-<span class="w">    </span><span class="n">cudaFree</span><span class="p">(</span><span class="n">d_c</span><span class="p">);</span>
-
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</section>
-<section id="vector-addition">
-<h2>Vector Addition<a class="headerlink" href="#vector-addition" title="Permalink to this heading">#</a></h2>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdlib&gt;</span>
-
-<span class="c1">// Kernel definition</span>
-<span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">addVectors</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">N</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">index</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">c</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">index</span><span class="p">];</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="p">}</span>
-
-<span class="kt">void</span><span class="w"> </span><span class="n">fill_array</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">size</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">size</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span>
-<span class="w">        </span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">20</span><span class="p">;</span><span class="w"> </span><span class="c1">// size of vectors</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">;</span><span class="w"> </span><span class="c1">// host copies of a, b, c</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">d_a</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">d_b</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">d_c</span><span class="p">;</span><span class="w"> </span><span class="c1">// device copies of a, b, c</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Allocate space for device copies of a, b, c</span>
-<span class="w">    </span><span class="n">cudaMalloc</span><span class="p">((</span><span class="kt">void</span><span class="w"> </span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">d_a</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
-<span class="w">    </span><span class="n">cudaMalloc</span><span class="p">((</span><span class="kt">void</span><span class="w"> </span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">d_b</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
-<span class="w">    </span><span class="n">cudaMalloc</span><span class="p">((</span><span class="kt">void</span><span class="w"> </span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">d_c</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Setup input values</span>
-<span class="w">    </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">size</span><span class="p">);</span><span class="w"> </span><span class="n">fill_array</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
-<span class="w">    </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">size</span><span class="p">);</span><span class="w"> </span><span class="n">fill_array</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
-<span class="w">    </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">size</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Copy inputs to device</span>
-<span class="w">    </span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">d_a</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">cudaMemcpyHostToDevice</span><span class="p">);</span>
-<span class="w">    </span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">d_b</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">cudaMemcpyHostToDevice</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Call the kernel</span>
-<span class="w">    </span><span class="n">addVectors</span><span class="o">&lt;&lt;&lt;</span><span class="n">N</span><span class="p">,</span><span class="mi">1</span><span class="o">&gt;&gt;&gt;</span><span class="p">(</span><span class="n">d_a</span><span class="p">,</span><span class="w"> </span><span class="n">d_b</span><span class="p">,</span><span class="w"> </span><span class="n">d_c</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Copy result back to host</span>
-<span class="w">    </span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">d_c</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">cudaMemcpyDeviceToHost</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Cleanup</span>
-<span class="w">    </span><span class="n">free</span><span class="p">(</span><span class="n">a</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">b</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
-<span class="w">    </span><span class="n">cudaFree</span><span class="p">(</span><span class="n">d_a</span><span class="p">);</span><span class="w"> </span><span class="n">cudaFree</span><span class="p">(</span><span class="n">d_b</span><span class="p">);</span><span class="w"> </span><span class="n">cudaFree</span><span class="p">(</span><span class="n">d_c</span><span class="p">);</span>
-
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</section>
-<section id="matrix-addition">
-<h2>Matrix Addition<a class="headerlink" href="#matrix-addition" title="Permalink to this heading">#</a></h2>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdlib&gt;</span>
-
-<span class="c1">// Kernel definition</span>
-<span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">addMatrices</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">N</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">row</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">blockIdx</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">blockDim</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">threadIdx</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">blockDim</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">row</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">c</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="n">N</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">col</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="n">N</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">col</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="n">N</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">col</span><span class="p">];</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="p">}</span>
-
-<span class="kt">void</span><span class="w"> </span><span class="n">fill_matrix</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">size</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">size</span><span class="o">*</span><span class="n">size</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span>
-<span class="w">        </span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">10</span><span class="p">;</span><span class="w"> </span><span class="c1">// size of matrices</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">;</span><span class="w"> </span><span class="c1">// host copies of...a, b, c</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">d_a</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">d_b</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">d_c</span><span class="p">;</span><span class="w"> </span><span class="c1">// device copies of a, b, c</span>
-<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Allocate space for device copies of a, b, c</span>
-<span class="w">    </span><span class="n">cudaMalloc</span><span class="p">((</span><span class="kt">void</span><span class="w"> </span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">d_a</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
-<span class="w">    </span><span class="n">cudaMalloc</span><span class="p">((</span><span class="kt">void</span><span class="w"> </span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">d_b</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
-<span class="w">    </span><span class="n">cudaMalloc</span><span class="p">((</span><span class="kt">void</span><span class="w"> </span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">d_c</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Setup input values</span>
-<span class="w">    </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">size</span><span class="p">);</span><span class="w"> </span><span class="n">fill_matrix</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
-<span class="w">    </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">size</span><span class="p">);</span><span class="w"> </span><span class="n">fill_matrix</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
-<span class="w">    </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">size</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Copy inputs to device</span>
-<span class="w">    </span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">d_a</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">cudaMemcpyHostToDevice</span><span class="p">);</span>
-<span class="w">    </span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">d_b</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">cudaMemcpyHostToDevice</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Call the kernel</span>
-<span class="w">    </span><span class="n">dim3</span><span class="w"> </span><span class="nf">threadsPerBlock</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="mi">16</span><span class="p">);</span>
-<span class="w">    </span><span class="n">dim3</span><span class="w"> </span><span class="nf">numBlocks</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">threadsPerBlock</span><span class="p">.</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">threadsPerBlock</span><span class="p">.</span><span class="n">y</span><span class="p">);</span>
-<span class="w">    </span><span class="n">addMatrices</span><span class="o">&lt;&lt;&lt;</span><span class="n">numBlocks</span><span class="p">,</span><span class="w"> </span><span class="n">threadsPerBlock</span><span class="o">&gt;&gt;&gt;</span><span class="p">(</span><span class="n">d_a</span><span class="p">,</span><span class="w"> </span><span class="n">d_b</span><span class="p">,</span><span class="w"> </span><span class="n">d_c</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Copy result back to host</span>
-<span class="w">    </span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">d_c</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">cudaMemcpyDeviceToHost</span><span class="p">);</span>
-
-<span class="w">    </span><span class="c1">// Cleanup</span>
-<span class="w">    </span><span class="n">free</span><span class="p">(</span><span class="n">a</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">b</span><span class="p">);</span><span class="w"> </span><span class="n">free</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
-<span class="w">    </span><span class="n">cudaFree</span><span class="p">(</span><span class="n">d_a</span><span class="p">);</span><span class="w"> </span><span class="n">cudaFree</span><span class="p">(</span><span class="n">d_b</span><span class="p">);</span><span class="w"> </span><span class="n">cudaFree</span><span class="p">(</span><span class="n">d_c</span><span class="p">);</span>
-
-<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<span class="p">}</span>
-</pre></div>
-</div>
+<p>And there you have it, dear reader. You’ve successfully navigated the Second Circle of our CUDA Inferno. You’ve learned how to write and call CUDA kernels, and you’ve even learned how to add vectors and matrices together. I hope you’re feeling proud of yourself, because you should be. In the next chapter, we’ll learn how to interface our CUDA programs with Python, and things will start to get a lot more interesting. So hang in there. The best is yet to come.</p>
+<p>And remember, if you’re feeling overwhelmed, just take a deep breath and remember that every expert was once a beginner. Even me. Especially me. If you’re feeling like you’re in over your head, just remember: it’s not rocket science. Well, unless you’re using CUDA for rocket science. In which case, it is. But don’t worry, you’re smart. You wouldn’t be here if you weren’t. Or maybe you’re just masochistic. Either way, I like your style.</p>
+<p>As always, the full code can be found in the /code folder. Except when it can’t, then it won’t be there.</p>
 </section>
 </section>
 
@@ -820,12 +667,6 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#choosing-optimal-block-and-grid-sizes-it-s-not-about-size-it-s-how-you-use-it">Choosing Optimal Block and Grid Sizes: It’s Not About Size, It’s How You Use It</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#memory-allocation-and-de-allocation-give-and-take-but-mostly-take">Memory Allocation and De-allocation: Give and Take, But Mostly Take</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#const-correctness-some-things-never-change">Const Correctness: Some Things Never Change</a></li>
-</ul>
-</li>
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#full-code">Full Code</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#element-addition">Element addition</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#vector-addition">Vector Addition</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#matrix-addition">Matrix Addition</a></li>
 </ul>
 </li>
 </ul>

@@ -1,111 +1,170 @@
 # The Third Circle: Speaking with the Python
 
-*In the Third Circle, we see the allure of Python and the unyielding fortitude of CUDA form a tumultuous bond. A bit like those celebrity relationships in the tabloids—eccentric and always on the edge of implosion. Yet, we dare to tread this path.*
+Ah, dear reader, welcome to the Third Circle of our shared Inferno, where we begin the journey of touching our CUDA to the Python. 
 
-Before we delve into the deep, dark abyss of mixing Python and CUDA, let's comprehend why we're subjecting ourselves to this ordeal in the first place.
+## Step 1: Making our CUDA code play nice
 
-## Why Are We Doing This Again?
-
-We're looking to have our Python and CUDA cake and eat it too. Python, being an interpreted language, comes with the gift of simplicity but pays the price in speed. CUDA, on the other hand, allows us to perform complex calculations rapidly by using the power of the GPU. The idea is to exploit the easy-to-use nature of Python for tasks such as data preprocessing, then pass the data to CUDA for the heavy lifting. A harmonious duet of simplicity and power.
-
-But how do we create this harmony? Enter Cython.
-
-## Cython: Your Translator in This Hellish Journey
-
-Cython is our bridge, an interpreter between Python and CUDA. It's a programming language that is a superset of Python, which makes it possible for Python to play well with C/C++. Since CUDA C is essentially C/C++ with a few extra bits, Cython can help us interface with CUDA code as well.
-
-To put it in layman's terms, Cython is like a skilled diplomat, proficient in the languages of both Python and CUDA, and capable of facilitating productive dialogue between the two.
-
-Now, let's roll up our sleeves and get dirty.
-
-## Setting Up Cython
-
-First things first, we need to install Cython. Stay calm and command your terminal:
-
-```bash
-pip install cython
-```
-
-Well done, survivor. You've achieved another monumental task in this journey through the inferno.
-
-## Creating The Bridge: Building a Cython Wrapper
-
-The first step in calling CUDA from Python is creating a Cython wrapper for your CUDA code. I know this sounds confusing, but it's really not.
-
-You see, Cython works by translating Python code into C code and then compiling this C code into a Python extension module, a shared library that Python can import just like a normal Python module.
-
-First, let's create a file named '[add.cu](http://add.cu/)' and write our CUDA kernel function for adding two integers. Remember that from Chapter 3? This time, we'll also include a wrapper function to call our kernel. The 'extern "C"' bit tells the compiler that the code inside the braces should be compiled as C code.
+First things first, we must modify our matrix addition code from the previous chapter.
 
 ```cpp
 #include <cuda.h>
+#include <cuda_runtime.h>
+#include <stdio.h>
 
-// The CUDA kernel
-__global__ void add_kernel(int a, int b, int *c)
+extern "C"
 {
-    *c = a + b;
+#include "add_matrices.h"
 }
 
-// The C++ wrapper function
-extern "C" void add(int a, int b, int *c)
-{
-    int *dev_c;
+// Kernel definition
+__global__ void addMatrices(const int *a, const int *b, int *c, const int N) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row < N && col < N) {
+        c[row*N + col] = a[row*N + col] + b[row*N + col];
+    }
+}
 
-    // Allocate memory on the GPU
-    cudaMalloc((void**)&dev_c, sizeof(int));
+void gpu_add_matrices(int *a, int *b, int *c, const int N) {
+    const int THREADS_PER_BLOCK = 16;
+    const int BLOCKS = (N + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
 
-    // Run the kernel
-    add_kernel<<<1,1>>>(a, b, dev_c);
+    int *d_a, *d_b, *d_c; // device copies of a, b, c
+    int size = N * N * sizeof(int);
 
-    // Copy the result back to the host
-    cudaMemcpy(c, dev_c, sizeof(int), cudaMemcpyDeviceToHost);
+    // Allocate space for device copies of a, b, c
+    cudaMalloc((void **)&d_a, size);
+    cudaMalloc((void **)&d_b, size);
+    cudaMalloc((void **)&d_c, size);
 
-    // Free the memory on the GPU
-    cudaFree(dev_c);
+    // Copy inputs to device
+    cudaMemcpy(d_a, a, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, b, size, cudaMemcpyHostToDevice);
+
+    // Call the kernel
+    dim3 threadsPerBlock(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+    dim3 numBlocks(BLOCKS, BLOCKS);
+    addMatrices<<<numBlocks, threadsPerBlock>>>(d_a, d_b, d_c, N);
+
+    // Copy result back to host
+    cudaMemcpy(c, d_c, size, cudaMemcpyDeviceToHost);
+
+    // Cleanup
+    cudaFree(d_a); cudaFree(d_b); cudaFree(d_c);
 }
 ```
 
-The next step is to compile this CUDA code into a shared library that Python can link against. The compilation process involves both the CUDA compiler (nvcc) and the system's C++ compiler (g++). Here's a simple Makefile that will get this job done:
+The keen eyed among you, of which I'm sure there must be at least one, will notice we've changed the name of the `main` function to `gpu_add_matrices`. This is because we're going to be calling this function from Python, and we don't want to have to deal with the `main` function.
+In addition, it now takes in parameters, how nice. Note I've also immediately thrown away most of our best practices from the previous chapter. I'm trying to keep it short, who needs error checking anyway?
 
-```makefile
-all:
-    nvcc -c -o add.o add.cu
-    g++ -shared -o libadd.so add.o
+We'll also need to import `<cuda.h>` and `<cuda_runtime.h>` to make sure we have access to CUDA's functions and types when using Cython. In previous chapters these were automatically added by the NVCC compiler, but now we're using Cython, we need to do it ourselves. Boo. 
+
+Lastly, we'll need to add the `extern "C"` block. This tells the compiler to treat the code like C code to avoid name mangling, allowing Cython to correctly call our CUDA function. It's totally a thing, Google it.
+
+## Step 2: Head over heels for headers
+
+Next on the devils list is to create a header file for our new function. This allows Cython (discussed imminently) to know what functions exist, and how to call them. 
+
+```cpp
+#ifndef ADD_MATRICES_H
+#define ADD_MATRICES_H
+
+void gpu_add_matrices(int *a, int *b, int *c, const int N);
+
+#endif
 ```
 
-After running 'make', we'll get a shared library file named '[libadd.so](http://libadd.so/)'. This library contains our CUDA function that we're going to call from Python.
+In the nightclub of our code, the `#ifndef` serves as the bouncer. It checks if the guest `ADD_MATRICES_H` is already at the party. If it is, the bouncer firmly says, "You're not coming in twice, mate!"
+If `ADD_MATRICES_H` isn't at the party yet, `#define` puts its name on the guest list. This way, if it tries to sneak in again, the bouncer will be ready.
 
-## Interfacing With Python
+The line `void gpu_add_matrices(int *a, int *b, int *c, const int N);` is like the DJ announcing the next track: "Next up, we've got `gpu_add_matrices`, spinning some beats with `a`, `b`, `c`, and `N`!". It's declaring our CUDA function and what it expects to do its magic.
 
-Now it's time to use Cython to create a Python module for our CUDA function. First, create a file called 'add.pyx' with the following contents:
+And finally, `#endif` is our bouncer giving a sigh of relief and shutting the door, signaling the end of the include guard shift.
+
+## Step 3: Wrapping it up with Cython
+
+Now, we will bridge the chasm between CUDA and Python, the high-level convenience and the low-level power. It's akin to merging water and oil, but fortunately for us, Cython exists to make this seemingly impossible task possible. 
+We'll need to create a Cython file, for example: `matrix_adder_wrapper.pyx`.
+
+Let's start by adding these enigmatic directives:
 
 ```python
-cdef extern from "add.cu":
-    void add(int a, int b, int *c)
+# distutils: language = c++
+# distutils: sources = add_matrices.cu
+```
 
-def add_integers(int a, int b):
-    cdef int c
-    add(a, b, &c)
+These lines are specifically for distutils, a module in Python responsible for building and installing additional modules. We inform it that the language we're going to deal with is C++ (although it's really CUDA, but for the build process, it's nearly the same). The second line specifies the source file that will be compiled, our CUDA program, `add_matrices.cu`. This information is vital for distutils to correctly build our extension.
+
+Then, we have this exotic block:
+
+```python
+cdef extern from "add_matrices.h":
+    void gpu_add_matrices(int *a, int *b, int *c, const int N)
+```
+
+The `cdef extern` here is Cython's way of declaring that there's a C function we'd like to use. By doing so, Cython can generate the correct C code that calls our CUDA function from Python. This block is our diplomatic envoy, effectively stating, "We've got an outside function named `gpu_add_matrices`. It looks like this, and it's from `add_matrices.h`."
+
+Now, onto the pièce de résistance: the Python wrapper function:
+
+```python
+def add_matrices(a, b):
+    cdef int N = len(a)
+    cdef int c[N*N]
+    gpu_add_matrices(&a[0], &b[0], &c[0], N)
     return c
 ```
 
-This Cython file does two things:
+This Python function uses Cython's ability to declare C-style variables with `cdef`, and it calls our CUDA function using pointers (i.e., `&a[0]`) to the data stored in Python lists. The result of the CUDA function is then returned back to Python land.
 
-1. It declares that there's a function named 'add' (from our CUDA code) that we want to call.
-2. It defines a Python function named 'add_integers' that Python code can call. This function just wraps the CUDA 'add' function, passing its arguments along and returning its result.
+This leaves us with the full code:
 
-Finally, we need to compile this Cython code into a Python extension module. We'll use a setup script named '[setup.py](http://setup.py/)':
+```python
+# distutils: language = c++
+# distutils: sources = add_matrices.cu
+
+cdef extern from "add_matrices.h":
+    void gpu_add_matrices(int *a, int *b, int *c, const int N)
+
+def add_matrices(a, b):
+    cdef int N = len(a)
+    cdef int c[N*N]
+    gpu_add_matrices(&a[0], &b[0], &c[0], N)
+    return c
+```
+
+## Step 4: Building with Distutils
+
+Oh, my favorite part of coding: the build process. It's like waiting for paint to dry, but the paint is code. Let's turn to our trusty sidekick, distutils, to help us out.
+
+First, we need to write a `setup.py` file, which is about as fun as it sounds:
 
 ```python
 from setuptools import setup
+from setuptools.extension import Extension
 from Cython.Build import cythonize
+import numpy
+
+ext_modules = [
+    Extension(
+        "add_matrices",
+        sources=["add_matrices.pyx", "add_matrices.cu"],
+        include_dirs=[numpy.get_include()],
+        language='c++',
+        extra_compile_args=['-O2', '--ptxas-options=-v', '-arch=sm_60', '--compiler-options', "'-fPIC'"],
+        extra_link_args=['-lcudart'],
+        library_dirs=['/usr/local/cuda/lib64']
+    )
+]
 
 setup(
-    name='CUDA addition',
-    ext_modules=cythonize("add.pyx"),
-    zip_safe=False,
+    name='Add Matrices',
+    ext_modules=cythonize(ext_modules),
 )
 ```
 
-You can then build your Cython module using the command 'python [setup.py](http://setup.py/) build_ext --inplace'. This command will create a file named 'add.cpython-XXm-x86_64-linux-gnu.so', which is a Python extension module that you can import in Python using the name 'add'.
+This code tells distutils what it should be doing, in a way that is clear to even the most stubborn of machines. There are various compile and link arguments that are specific to your system, so you may need to change them to match your setup.
 
-If you've made it this far without pulling out your hair, well done! You've traversed the Third Circle, linking Python and CUDA using Cython. I'm afraid to say, dear reader, that the journey is only going to get tougher from here on out. But worry not! After all, aren't we here to endure a little punishment?
+Our `ext_modules` list contains a single `Extension` object, which is essentially a glorified sticky note saying: "Compile these files with these settings, and please don't mess it up". Then `cythonize(ext_modules)` takes this sticky note and translates it into a format that distutils can understand, sort of like a parent interpreting their toddler's scribbles.  Finally, `setup` ties this all together and kicks off the build process.
+
+With any luck, we'll be able to run `python setup.py build_ext --inplace`, and be able to import our new module into Python with `import add_matrices`. If not, well, I'm sure you'll figure it out. 
+The full code is available in the `code` folder once more.
